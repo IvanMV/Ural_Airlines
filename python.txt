@@ -1,0 +1,153 @@
+1. Дана строка, которая содержит латинские буквы, цифры, пробелы и символы скобок.
+Удалите из строки текст, заключённый в скобки.
+Напишите вариант с использованием регулярных выражений и без них.
+Например:
+    "asdflj (kla (inner) asd) port (another ))(unclosed" -> "asdflj port )(unclosed"
+
+РЕШЕНИЕ
+# Удаление из строки текста, заключенного в скобки с использованием regex
+import re
+def remove_by_re(string):
+    pattern = r'\([^()]*\)'
+    while re.search(pattern, string):
+        string = re.sub(pattern, '', string)
+    return string
+
+# Удаление из строки текста, заключенного в скобки без использования regex
+def remove_manual(string):
+    found = 0
+    while found > -1:
+        right = string.find(')', found + 1)
+        if right > -1:
+            left = string.rfind('(', 0, right)
+            if left > -1:
+                string = string[:left] + string[right+1:]
+                found = left - 1
+            else:
+                found = right
+        else:
+            return string
+------------------------------------------------------------------------------------------------------------------------------
+2. Даны несколько кортежей с целыми числами.
+Напишите функцию [1], которая принимает на вход неограниченное число одномерных кортежей разной длинны с целыми числами.
+Результатом функции должен быть список кортежей, в каждом из которых:
+значение 1 - значения входных кортежей по порядку
+значение 2 - значение 1, возведенное в степень значения 1
+Например: 
+    (1, 1), (2, 3), (2,), (2,) -> [(1, 1), (1, 1), (2, 4), (3, 27), (2, 4), (2, 4)]
+
+РЕШЕНИЕ
+def exponent(*args):
+    return [(x, x**x) for item in args if isinstance(item, tuple) for x in item]
+  
+------------------------------------------------------------------------------------------------------------------------------
+3. Напишите функцию [2], которая принимает на вход результат функции [1].
+Результатом функции должен быть список из вторых элементов входных кортежей. Удалите повторяющиеся значения, следующие друг за другом.
+Например: 
+    [(1, 1), (1, 1), (2, 4), (3, 27), (2, 4), (2, 4)] -> [1, 4, 27, 4]
+
+РЕШЕНИЕ
+def second_elements(func, args):
+    result = []
+    for _, second in func(*args):
+        if not result or second != result[-1]:
+            result.append(second)
+    return result
+  
+------------------------------------------------------------------------------------------------------------------------------
+4. Напишите юнит-тесты для проверки написанного кода. Если это возможно, приведите примеры оптимизации написанных функции для уменьшения накладных расходов.
+
+РЕШЕНИЕ
+import unittest
+from tasks import remove_by_re, remove_manual, exponent, second_elements
+
+class TestRemoveByRegex(unittest.TestCase):
+    def test_remove_single(self):
+        input_str = "This is (a test) string."
+        expected_result = "This is  string."
+        self.assertEqual(remove_by_re(input_str), expected_result)
+
+    def test_remove_nested(self):
+        input_str = "Example (with (nested) expression 25478)."
+        expected_result = "Example ."
+        self.assertEqual(remove_by_re(input_str), expected_result)
+
+    def test_remove_multiple(self):
+        input_str = "Example (inside) multiple (pairs) of (somedata 7233)."
+        expected_result = "Example  multiple  of ."
+        self.assertEqual(remove_by_re(input_str), expected_result)
+        
+    def test_remove_with_unclosed(self):
+        input_str = "asdflj (kla (inner) asd) port (another ))(unclosed"
+        expected_result = "asdflj  port )(unclosed"
+        self.assertEqual(remove_by_re(input_str), expected_result)
+        
+        
+class TestRemoveByManual(unittest.TestCase):
+    def test_remove_single(self):
+        input_str = "This is (a test) string."
+        expected_result = "This is  string."
+        self.assertEqual(remove_manual(input_str), expected_result)
+
+    def test_remove_nested(self):
+        input_str = "Example (with (nested) expression 25478)."
+        expected_result = "Example ."
+        self.assertEqual(remove_manual(input_str), expected_result)
+
+    def test_remove_multiple(self):
+        input_str = "Example (inside) multiple (pairs) of (somedata 7233)."
+        expected_result = "Example  multiple  of ."
+        self.assertEqual(remove_manual(input_str), expected_result)
+        
+    def test_remove_with_unclosed(self):
+        input_str = "asdflj (kla (inner) asd) port (another ))(unclosed"
+        expected_result = "asdflj  port )(unclosed"
+        self.assertEqual(remove_manual(input_str), expected_result)
+
+
+class TestExponentFunction(unittest.TestCase):
+    def test_single_tuple(self):
+        # Проверка для одного кортежа
+        result = exponent((2, 3, 4))
+        self.assertEqual(result, [(2, 4), (3, 27), (4, 256)])
+
+    def test_multiple_tuples(self):
+        # Проверка для нескольких кортежей
+        result = exponent((1, 1), (2, 3), (2,), (2,))
+        self.assertEqual(result, [(1, 1), (1, 1), (2, 4), (3, 27), (2, 4), (2, 4)])
+
+    def test_empty_and_single_elem_tuples(self):
+        # Проверка для пустых кортежей и кортежей с одним элементом
+        result = exponent((), (1,), ())
+        self.assertEqual(result, [(1, 1)])
+
+    def test_non_tuple_args(self):
+        # Проверка для аргументов, которые не являются кортежами
+        result = exponent(2, 3, 4)
+        self.assertEqual(result, [])
+        
+        
+class TestSecondElementsFunction(unittest.TestCase):
+    def test_single_tuple(self):
+        # Проверка для одного кортежа
+        result = second_elements(exponent, ((2, 3, 4),))
+        self.assertEqual(result, [4, 27, 256])
+
+    def test_multiple_tuples(self):
+        # Проверка для нескольких кортежей
+        result = second_elements(exponent, ((2, 3), (1, 2, 3)))
+        self.assertEqual(result, [4, 27, 1, 4, 27])
+
+    def test_empty_tuples(self):
+        # Проверка для пустых кортежей и кортежей с одним элементом
+        result = second_elements(exponent, ((), (1,), ()))
+        self.assertEqual(result, [1])
+
+    def test_repeating_values(self):
+        # Проверка с повторяющимися значениями
+        result = second_elements(exponent, ((1, 1), (2, 3), (2,), (2,)))
+        self.assertEqual(result, [1, 4, 27, 4])
+
+
+if __name__ == '__main__':
+    unittest.main()
