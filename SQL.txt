@@ -1,0 +1,42 @@
+ДАНО:
+CREATE TABLE `store` (
+`id` int(11) NOT NULL AUTO_INCREMENT,
+`name` varchar(64) NOT NULL,
+PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `purchase` (
+`id` int(11) NOT NULL AUTO_INCREMENT,
+`product` varchar(128) NOT NULL,
+`price` decimal(10,2) NOT NULL,
+`store_id` int(11) NOT NULL,
+PRIMARY KEY (`id`),
+KEY `purchase_store_id_fk_store_id` (`store_id`),
+CONSTRAINT `purchase_store_id_fk_store_id` FOREIGN KEY (`store_id`)
+REFERENCES `store` (`id`)
+);
+------------------------------------------------------------------------------------------------------------
+1. Получить общую стоимость покупок для каждого из магазинов
+
+РЕШЕНИЕ
+SELECT store.name, SUM(purchase.price) AS total_sum
+FROM store
+LEFT JOIN purchase ON store.id = purchase.store_id
+GROUP BY store.id, store.name ;
+------------------------------------------------------------------------------------------------------------
+2. Вывести перечень всех покупок. Требуемые данные:
+название магазина, название товара, стоимость
+
+РЕШЕНИЕ
+SELECT store.name, purchase.product, purchase.price
+FROM purchase
+LEFT JOIN store ON purchase.store_id = store.id ;
+------------------------------------------------------------------------------------------------------------
+3. Сосчитать количество покупок с ценой больше 100 в каждом магазине.
+
+РЕШЕНИЕ
+SELECT store.name, COUNT(purchase.product) AS total_purchases
+FROM purchase
+LEFT JOIN store ON purchase.store_id = store.id
+WHERE purchase.price > 100
+GROUP BY purchase.store_id, store.name ;
