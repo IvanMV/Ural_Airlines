@@ -1,0 +1,45 @@
+Даны модели django (таблицы), описывающую базу закупок:
+class Store(models.Model):
+    name = models.CharField(" ", max_length=64)
+class Purchase(models.Model):
+    store = models.ForeignKey(Store, verbose_name="")
+    name = models.CharField(" ", max_length=128, db_column="product")
+    price = models.DecimalField(" ", max_digits=10, decimal_places=2)
+------------------------------------------------------------------------------------------------------------------------------
+1. Получить общую стоимость покупок для каждого из магазинов
+
+РЕШЕНИЕ
+from django.db.models import Sum
+
+# Получить общую стоимость покупок для каждого магазина
+total_purchase_by_store = Store.objects.annotate(total_cost=Sum('purchase__price'))
+
+# Вывести результат
+for store in total_purchase_by_store:
+    print(f"Магазин: {store.name}, Общая стоимость покупок: {store.total_cost}")
+------------------------------------------------------------------------------------------------------------------------------
+2. Вывести перечень всех покупок. Требуемые данные:
+название магазина, название товара, стоимость
+
+РЕШЕНИЕ
+from trade.models import Store, Purchase
+
+# Получить все покупки с требуемыми данными
+purchases = Purchase.objects.select_related('store').all()
+
+# Вывести результат
+for purchase in purchases:
+    print(f"Магазин: {purchase.store.name}, Название товара: {purchase.name}, Стоимость: {purchase.price}")
+------------------------------------------------------------------------------------------------------------------------------
+3. Сосчитать количество покупок с ценой больше 100 в каждом магазине.
+
+РЕШЕНИЕ
+from django.db.models import Count, Q
+from trade.models import Store, Purchase
+
+# Подсчитать количество покупок с ценой больше 100 в каждом магазине
+purchase_counts = Store.objects.annotate(total_purchases=Count('purchase', filter=Q(purchase__price__gt=100)))
+
+# Вывести результат
+for store in purchase_counts:
+    print(f"Магазин: {store.name}, Количество покупок с ценой больше 100: {store.total_purchases}")
